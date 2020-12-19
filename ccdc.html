@@ -113,11 +113,17 @@
                 }
         });
         formData['txtName'] = letter + '%';
+        let ids = new Set();
         await $.post(url,formData, function(data){
             let result = $(data);
             let rows = result.find('#DataGrid1').find('tr');
             for (i=1; i<rows.length; i++){
                 let cells = rows[i].cells;
+                if (ids.has(cells[1].textContent)){
+                    continue;
+                } else {
+                    ids.add((cells[1].textContent));
+                }
                 let row = [
                     cells[1].textContent, //ID
                     cells[2].textContent, //Name
