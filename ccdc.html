@@ -96,16 +96,39 @@
         for (let i = 0; i < 26; i++) {
             let letter = String.fromCharCode(97 + i);
             $("#status").text("Now getting letter " + letter + "...");
-            row = [
-                letter,
-                'Unconvicted',
-                '3/'+i+'/2020',
-                25-i,'W','M'
-            ]
-            $('#resultsTable').DataTable().row.add(row).draw();
-            await new Promise(r => setTimeout(r, 500));
+            await getLetter(letter);
             $("#status").text("Done!");
         }
+
+    }
+    async function getLetter(letter){
+        //get search page and form elements
+        let url='https://jailcensus.org/proxy/NV_Clark/inCustodySearch.aspx';
+        let formData = {};
+        await $.get(url, function( data ) {
+            let searchPage = $(data);
+            let inputs = searchPage.find('input');
+            for (i=0; i<inputs.length; i++){
+                formData[inputs[i].name] = inputs[i].value;
+                }
+        });
+        formData['txtName'] = letter + '%';
+        await $.post(url,formData, function(data){
+            let result = $(data);
+            let rows = result.find('#DataGrid1').find('tr');
+            for (i=1; i<rows.length; i++){
+                let cells = rows[i].cells;
+                let row = [
+                    cells[1].textContent, //ID
+                    cells[2].textContent, //Name
+                    cells[3].textContent, //Arrest Date
+                    cells[6].textContent, // Age
+                    cells[7].textContent, // Race
+                    cells[8].textContent, // Sex
+                ];
+                $('#resultsTable').DataTable().row.add(row).draw();
+            }
+            });
     }
 </script>
 </html>
