@@ -96,44 +96,69 @@
             data.push(String.fromCharCode(97 + i));
         }
         $("#status").text("Getting list of people inside...");
-        async.concatLimit(data, 6, getLetter, function(err, results) {
-            $("#status").text("Done!");
+        let forms = [];
+        async.mapLimit(data, 6, searchLetter, function(err, result) {
+            for (i=0;i<result.length;i++){
+                for (j=0; j<result[i].length;j++){
+                    forms.push(result[i][j]);
+                }
+            }
+            $("#status").text("Found " + forms.length + " inmates inside today.");
+            for (i=0; i<forms.length; i++){
+                //TODO: get detail data and add row to table
+                //console.log(forms[i]);
+
+                // let row = [
+                //     cells[1].textContent, //ID
+                //     cells[2].textContent, //Name
+                //     cells[3].textContent, //Arrest Date
+                //     cells[6].textContent, // Age
+                //     cells[7].textContent, // Race
+                //     cells[8].textContent, // Sex
+                // ];
+                // $('#resultsTable').DataTable().row.add(row).draw();
+            }
         });
+
     }
-    async function getLetter(letter){
+    async function searchLetter(letter){
         //get search page and form elements
         let url='https://jailcensus.org/proxy/NV_Clark/inCustodySearch.aspx';
         let formData = {};
         await $.get(url, function( data ) {
             let searchPage = $(data);
             let inputs = searchPage.find('input');
-            for (i=0; i<inputs.length; i++){
-                formData[inputs[i].name] = inputs[i].value;
-                }
+            for (i=0; i<inputs.length; i++){formData[inputs[i].name] = inputs[i].value;}
+            formData['txtName'] = letter + '%';
         });
-        formData['txtName'] = letter + '%';
+        // submit search form and get data to fill detail forms
         let ids = new Set();
+        let detailForms = [];
         await $.post(url,formData, function(data){
             let result = $(data);
+            let subFormData = {
+                __VIEWSTATE:result.find('#__VIEWSTATE')[0]['value'],
+                __VIEWSTATEGENERATOR: result.find('#__VIEWSTATEGENERATOR')[0]['value'],
+                __EVENTVALIDATION: result.find('#__EVENTVALIDATION')[0]['value']
+            };
             let rows = result.find('#DataGrid1').find('tr');
             for (i=1; i<rows.length; i++){
                 let cells = rows[i].cells;
+                // no duplicates
                 if (ids.has(cells[1].textContent)){
                     continue;
                 } else {
                     ids.add((cells[1].textContent));
                 }
-                let row = [
-                    cells[1].textContent, //ID
-                    cells[2].textContent, //Name
-                    cells[3].textContent, //Arrest Date
-                    cells[6].textContent, // Age
-                    cells[7].textContent, // Race
-                    cells[8].textContent, // Sex
-                ];
-                $('#resultsTable').DataTable().row.add(row).draw();
+
+                //get detail form info
+                var thisForm = JSON.parse(JSON.stringify(subFormData));
+                let button = cells[0].firstChild;
+                thisForm[button['name']] = 'Find w/ ID';
+                detailForms.push(thisForm);
             }
-            });
+        });
+        return detailForms;
     }
 </script>
 </html>
