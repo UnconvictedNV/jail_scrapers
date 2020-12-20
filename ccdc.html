@@ -7,11 +7,9 @@
     <link rel="stylesheet" type="text/css"
           href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/sp-1.0.1/datatables.min.css"/>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous">
-    </script>
-    <script type="text/javascript"
-            src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/sp-1.0.1/datatables.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/sp-1.0.1/datatables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/async/3.2.0/async.min.js"></script>
     <style>
         .bs-callout {
             padding: 20px;
@@ -93,13 +91,14 @@
     } );
     async function startScraper() {
         $('#resultsTable').DataTable().clear();
+        let data = [];
         for (let i = 0; i < 26; i++) {
-            let letter = String.fromCharCode(97 + i);
-            $("#status").text("Now getting letter " + letter + "...");
-            await getLetter(letter);
-            $("#status").text("Done!");
+            data.push(String.fromCharCode(97 + i));
         }
-
+        $("#status").text("Getting list of people inside...");
+        async.concatLimit(data, 6, getLetter, function(err, results) {
+            $("#status").text("Done!");
+        });
     }
     async function getLetter(letter){
         //get search page and form elements
