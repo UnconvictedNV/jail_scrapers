@@ -55,7 +55,11 @@
                 <th>Arrest Date</th>
                 <th>Age</th>
                 <th>Race</th>
-                <th>Sex</th></tr>
+                <th>Sex</th>
+                <th>Hold</th>
+                <th>Charges</th>
+                <th>Case(s)</th>
+            </tr>
             </thead>
             <tbody>
             </tbody>
@@ -103,23 +107,50 @@
                     forms.push(result[i][j]);
                 }
             }
-            $("#status").text("Found " + forms.length + " inmates inside today.");
-            for (i=0; i<forms.length; i++){
-                //TODO: get detail data and add row to table
-                //console.log(forms[i]);
-
-                // let row = [
-                //     cells[1].textContent, //ID
-                //     cells[2].textContent, //Name
-                //     cells[3].textContent, //Arrest Date
-                //     cells[6].textContent, // Age
-                //     cells[7].textContent, // Race
-                //     cells[8].textContent, // Sex
-                // ];
-                // $('#resultsTable').DataTable().row.add(row).draw();
-            }
+            $("#status").text("Found " + forms.length + " inmates inside today. Getting details....");
+            async.eachOfLimit(forms, 6, searchDetail, function(err, result) {
+                $("#status").text("done!");
+            });
         });
-
+    }
+    async function searchDetail(formData) {
+        let url = 'https://jailcensus.org/proxy/NV_Clark/inCustodyReference.aspx';
+        await $.post(url,formData, function(data) {
+            let tables = $(data).filter('table');
+            let row = $(tables[2]).find('tr')[0];
+            let id = $(row).find('td')[0].textContent;
+            let name = $(row).find('td')[1].textContent;
+            let age = $(row).find('td')[2].textContent;
+            let race = $(row).find('td')[3].textContent;
+            let sex = $(row).find('td')[4].textContent;
+            let cases = new Set();
+            let charges = new Set();
+            let arrestDates = new Set();
+            let hold = 'N';
+            for (i=2; i<tables.length; i++){
+                let row1 = $(tables[i]).find('tr')[1];
+                cases.add($(row1).find('td')[0].textContent);
+                charges.add($(row1).find('td')[1].textContent);
+                let row2 = $(tables[i]).find('tr')[2];
+                arrestDates.add($(row2).find('td')[1].textContent);
+                if ($(row2).find('td')[2].textContent==='Y'){
+                    hold='Y';
+                }
+            }
+            row = [
+                id,
+                name,
+                Array.from(arrestDates).join(),
+                age,
+                race,
+                sex,
+                hold,
+                Array.from(charges).join(),
+                Array.from(cases).join()
+            ];
+            console.log(row);
+            $('#resultsTable').DataTable().row.add(row).draw();
+        });
     }
     async function searchLetter(letter){
         //get search page and form elements
