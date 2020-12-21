@@ -10,6 +10,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <script src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-flash-1.6.1/b-html5-1.6.1/sp-1.0.1/datatables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/async/3.2.0/async.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <style>
         .bs-callout {
             padding: 20px;
@@ -57,8 +58,8 @@
                 <th>Race</th>
                 <th>Sex</th>
                 <th>Hold</th>
-                <th>Charges</th>
-                <th>Case(s)</th>
+                <th>Cases(s)</th>
+                <th>Charge(s)</th>
             </tr>
             </thead>
             <tbody>
@@ -73,7 +74,7 @@
             fixedHeader: true,
             autoWidth: true,
             dom: 'Bltip',
-            order:['0', 'asc'],
+            order:[[2, 'desc'],[1,'asc']],
             buttons: [
                 'csvHtml5',
                 'excelHtml5'
@@ -123,16 +124,16 @@
             let age = $(row).find('td')[2].textContent;
             let race = $(row).find('td')[3].textContent;
             let sex = $(row).find('td')[4].textContent;
+            let row2 = $(tables[2]).find('tr')[2];
+            let arrestDate= $(row2).find('td')[1].textContent;
             let cases = new Set();
             let charges = new Set();
-            let arrestDates = new Set();
             let hold = 'N';
             for (i=2; i<tables.length; i++){
                 let row1 = $(tables[i]).find('tr')[1];
                 cases.add($(row1).find('td')[0].textContent);
                 charges.add($(row1).find('td')[1].textContent);
                 let row2 = $(tables[i]).find('tr')[2];
-                arrestDates.add($(row2).find('td')[1].textContent);
                 if ($(row2).find('td')[2].textContent==='Y'){
                     hold='Y';
                 }
@@ -140,16 +141,17 @@
             row = [
                 id,
                 name,
-                Array.from(arrestDates).join(),
+                moment(arrestDate).format('YYYY-MM-DD'),
                 age,
                 race,
                 sex,
                 hold,
-                Array.from(charges).join(),
-                Array.from(cases).join()
+                Array.from(cases).join(', '),
+                Array.from(charges).join(', '),
             ];
             console.log(row);
-            $('#resultsTable').DataTable().row.add(row).draw();
+            $('#resultsTable').DataTable().row.add(row);
+            $('#resultsTable').DataTable().columns.adjust().draw();
         });
     }
     async function searchLetter(letter){
