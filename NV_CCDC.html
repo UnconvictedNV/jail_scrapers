@@ -43,9 +43,13 @@
 
     <div class="bs-callout bs-callout-primary">
         <p>This page automatically downloads data from the <a href="https://redrock.clarkcountynv.gov/ccdcincustody/inCustodySearch.aspx">CCDC Inmate Search Site</a>. Press the button to get started!</p>
+        <p>
+            <input type="checkbox" id="recentOnly" checked=true>
+            Get Recent Bookings Only
+        </p>
         <button id="StarterButton" onclick="startScraper()">Start Download</button>
-        <br><br>
-        <p id="status"><i>Not running yet...</i></p>
+        <br>
+        <p id="status"></p>
     </div>
     <div>
         <h2>Results</h2>
@@ -110,7 +114,7 @@
                     forms.push(result[i][j]);
                 }
             }
-            $("#status").text("Found " + forms.length + " inmates inside today. Getting details....");
+            $("#status").text("Found " + forms.length + " inmates inside. Getting details....");
             async.eachOfLimit(forms, 6, searchDetail, function(err, result) {
                 $("#status").text("done!");
             });
@@ -187,6 +191,7 @@
                 __EVENTVALIDATION: result.find('#__EVENTVALIDATION')[0]['value']
             };
             let rows = result.find('#DataGrid1').find('tr');
+
             for (i=1; i<rows.length; i++){
                 let cells = rows[i].cells;
                 // no duplicates
@@ -195,7 +200,10 @@
                 } else {
                     ids.add((cells[1].textContent));
                 }
-
+                if ($('#recentOnly').prop('checked')){
+                    let arrestDate = moment(cells[3].textContent);
+                    if (moment().diff(arrestDate,'days')>2){continue;}
+                }
                 //get detail form info
                 var thisForm = JSON.parse(JSON.stringify(subFormData));
                 let button = cells[0].firstChild;
