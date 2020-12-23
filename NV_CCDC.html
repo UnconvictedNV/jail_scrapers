@@ -58,6 +58,7 @@
                 <th>Race</th>
                 <th>Sex</th>
                 <th>Hold</th>
+                <th>Total Bail</th>
                 <th>Cases(s)</th>
                 <th>Charge(s)</th>
             </tr>
@@ -129,14 +130,24 @@
             let cases = new Set();
             let charges = new Set();
             let hold = 'N';
+            let bail = 0;
             for (i=2; i<tables.length; i++){
                 let row1 = $(tables[i]).find('tr')[1];
                 cases.add($(row1).find('td')[0].textContent);
                 charges.add($(row1).find('td')[1].textContent);
                 let row2 = $(tables[i]).find('tr')[2];
+                let charge_bail = $(row2).find('td')[3].textContent;
+                try{
+                    bail += Number(charge_bail.replace(/[^0-9.-]+/g,""));
+                } catch {
+                    console.log(charge_bail);
+                }
                 if ($(row2).find('td')[2].textContent==='Y'){
                     hold='Y';
                 }
+            }
+            if  ($('#resultsTable').DataTable().indexOf(id)>-1){
+                return
             }
             row = [
                 id,
@@ -146,10 +157,10 @@
                 race,
                 sex,
                 hold,
+                bail,
                 Array.from(cases).join(', '),
                 Array.from(charges).join(', '),
             ];
-            console.log(row);
             $('#resultsTable').DataTable().row.add(row);
             $('#resultsTable').DataTable().columns.adjust().draw();
         });
